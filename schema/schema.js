@@ -5,7 +5,8 @@ const {
     GraphQLString,
     GraphQLInt,
     GraphQLSchema,
-    GraphQLList
+    GraphQLList,
+    GraphQLNonNull
 } = graphql;
 
 const CompanyType = new GraphQLObjectType({
@@ -62,8 +63,82 @@ const RootQuery = new GraphQLObjectType({
     }
 });
 
+const mutation = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+        addUser: {
+            type: UserType, // Return type of the mutation
+            args: {
+                firstName: { type: new GraphQLNonNull(GraphQLString) },
+                age: { type: new GraphQLNonNull(GraphQLInt) },
+                companyId: { type: GraphQLString }
+            },
+            resolve(parentValue, { firstName, age }) {
+                return axios.post('http://localhost:3000/users', { firstName, age })
+                    .then(res => res.data);
+            }
+        },
+        deleteUser: {
+            type: UserType, // Return type of the mutation, but the JSON server is not going to tell which data record was deleted (Returns null on GraphiQL)
+            args: {
+                id: { type: new GraphQLNonNull(GraphQLString) }
+            },
+            resolve(parentValue, args) {
+                return axios.delete(`http://localhost:3000/users/${args.id}`)
+                    .then(res => res.data);
+            }
+        },
+        updateUser: {
+            type: UserType,
+            args: {
+                id: { type: new GraphQLNonNull(GraphQLString) },
+                firstName: { type: GraphQLString },
+                age: { type: GraphQLInt },
+                companyId: { type: GraphQLString }
+            },
+            resolve(parentValue, { id, firstName, age, companyId }) {
+                let updateObj = {};
+                if(firstName) {
+                    updateObj = {
+                        ...updateObj,
+                        firstName
+                    };
+                }
+                if(age) {
+                    updateObj = {
+                        ...updateObj,
+                        age
+                    };
+                }
+                if(companyId) {
+                    updateObj = {
+                        ...updateObj,
+                        companyId
+                    };
+                }
+                return axios.patch(`http://localhost:3000/users/${id}`, updateObj)
+                    .then(res => res.data);
+            }
+        },
+        replaceUser: {
+            type: UserType,
+            args: {
+                id: { type: new GraphQLNonNull(GraphQLString) },
+                firstName: { type: new GraphQLNonNull(GraphQLString) }, // Assuming First name is a mandatory field as done in addUser mutation
+                age: { type: new GraphQLNonNull(GraphQLInt) }, // Assuming Age is a mandatory field as done in addUser mutation
+                companyId: { type: GraphQLString }
+            },
+            resolve(parentValue, { id, firstName, age, companyId }) {
+                return axios.put(`http://localhost:3000/users/${id}`, { firstName, age, companyId })
+                    .then(res => res.data);
+            }
+        }
+    }
+});
+
 module.exports = new GraphQLSchema({
-    query: RootQuery
+    query: RootQuery,
+    mutation
 });
 
 
@@ -82,4 +157,16 @@ fragment companyDetails on Company {
   name
   description
 }
+
+---------------------------------------
+
+mutation {
+  addUser (firstName: "Stephen", age: 26) {
+    id // Returned object
+    firstName
+    age
+  }
+}
+
+
 */
