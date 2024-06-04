@@ -88,7 +88,7 @@ const mutation = new GraphQLObjectType({
                     .then(res => res.data);
             }
         },
-        updateUser: {
+        editUser: {
             type: UserType,
             args: {
                 id: { type: new GraphQLNonNull(GraphQLString) },
@@ -96,27 +96,8 @@ const mutation = new GraphQLObjectType({
                 age: { type: GraphQLInt },
                 companyId: { type: GraphQLString }
             },
-            resolve(parentValue, { id, firstName, age, companyId }) {
-                let updateObj = {};
-                if(firstName) {
-                    updateObj = {
-                        ...updateObj,
-                        firstName
-                    };
-                }
-                if(age) {
-                    updateObj = {
-                        ...updateObj,
-                        age
-                    };
-                }
-                if(companyId) {
-                    updateObj = {
-                        ...updateObj,
-                        companyId
-                    };
-                }
-                return axios.patch(`http://localhost:3000/users/${id}`, updateObj)
+            resolve(parentValue, args) {
+                return axios.patch(`http://localhost:3000/users/${args.id}`, args)
                     .then(res => res.data);
             }
         },
@@ -129,7 +110,7 @@ const mutation = new GraphQLObjectType({
                 companyId: { type: GraphQLString }
             },
             resolve(parentValue, { id, firstName, age, companyId }) {
-                return axios.put(`http://localhost:3000/users/${id}`, { firstName, age, companyId })
+                return axios.put(`http://localhost:3000/users/${id}`, { firstName, age, companyId }) // Put requests overrides the non specified fields to null. Patch doesn't do that.
                     .then(res => res.data);
             }
         }
@@ -168,5 +149,14 @@ mutation {
   }
 }
 
+----------------------------------------
+
+mutation {
+  editUser (id: "40", age: 10) {
+    id
+    firstName
+    age
+  }
+}
 
 */
